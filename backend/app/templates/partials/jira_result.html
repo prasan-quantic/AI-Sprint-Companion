@@ -1,0 +1,183 @@
+{% if success %}
+<div class="result-card success">
+    <div class="result-header">
+        <span class="result-icon">✅</span>
+        <h3>Ticket Created Successfully!</h3>
+    </div>
+    <div class="result-content">
+        <div class="ticket-info">
+            <div class="ticket-key">
+                <a href="{{ ticket_url }}" target="_blank" class="ticket-link">
+                    {{ ticket_key }}
+                </a>
+            </div>
+            <p class="ticket-summary">{{ ticket_summary }}</p>
+        </div>
+        <div class="result-actions">
+            <a href="{{ ticket_url }}" target="_blank" class="btn btn-primary">
+                🔗 Open in Jira
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('result').innerHTML = '';">
+                ➕ Create Another
+            </button>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="result-card error">
+    <div class="result-header">
+        <span class="result-icon">❌</span>
+        <h3>Failed to Create Ticket</h3>
+    </div>
+    <div class="result-content">
+        <p class="error-message">{{ error }}</p>
+        <div class="result-actions">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('result').innerHTML = '';">
+                🔄 Try Again
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% extends "base.html" %}
+
+{% block title %}Jira Integration - AI Sprint Companion{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔗 Jira Integration</h1>
+    <p>Create Jira tickets directly from AI-generated content or manually enter ticket details.</p>
+</div>
+
+{% if not jira_configured %}
+<div class="warning-banner">
+    <div class="warning-icon">⚠️</div>
+    <div class="warning-content">
+        <strong>Jira Not Configured</strong>
+        <p>To use Jira integration, please add the following environment variables to your <code>.env</code> file:</p>
+        <ul>
+            <li><code>JIRA_URL</code> - Your Jira instance URL (e.g., https://yourcompany.atlassian.net)</li>
+            <li><code>JIRA_EMAIL</code> - Your Jira account email</li>
+            <li><code>JIRA_API_TOKEN</code> - Your Jira API token</li>
+            <li><code>JIRA_PROJECT_KEY</code> - The project key (e.g., PROJ)</li>
+        </ul>
+    </div>
+</div>
+{% else %}
+<div class="help-banner">
+    <div class="help-icon">✅</div>
+    <div class="help-content">
+        <strong>Jira Connected!</strong> You can create tickets in your configured Jira project.
+    </div>
+</div>
+{% endif %}
+
+<div class="form-container">
+    <form hx-post="/jira/create" hx-target="#result" hx-indicator="#loading">
+        <div class="form-group">
+            <label for="summary">📌 Summary / Title</label>
+            <input
+                type="text"
+                id="summary"
+                name="summary"
+                required
+                maxlength="255"
+                placeholder="e.g., Implement user password reset functionality"
+            >
+            <small class="form-hint">Brief, descriptive title for the ticket (max 255 characters)</small>
+        </div>
+
+        <div class="form-group">
+            <label for="description">📝 Description</label>
+            <textarea
+                id="description"
+                name="description"
+                rows="8"
+                required
+                placeholder="Detailed description of the work to be done...
+
+Example:
+As a user, I want to reset my password via email so that I can regain access to my account if I forget my password.
+
+Acceptance Criteria:
+- User can request a password reset from the login page
+- Reset link is sent via email within 1 minute
+- Reset link expires after 24 hours
+- User can set a new password using the link"
+            ></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="issue_type">📋 Issue Type</label>
+                <select id="issue_type" name="issue_type">
+                    <option value="Task">Task</option>
+                    <option value="Story">Story</option>
+                    <option value="Bug">Bug</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="priority">🎯 Priority</label>
+                <select id="priority" name="priority">
+                    <option value="">Default</option>
+                    <option value="Highest">Highest</option>
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Lowest">Lowest</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="labels">🏷️ Labels (Optional)</label>
+            <input
+                type="text"
+                id="labels"
+                name="labels"
+                placeholder="e.g., frontend, urgent, sprint-5 (comma-separated)"
+            >
+            <small class="form-hint">Comma-separated list of labels. "ai-generated" will be added automatically.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large btn-full" {% if not jira_configured %}disabled{% endif %}>
+            🚀 Create Jira Ticket
+        </button>
+    </form>
+
+    <div id="loading" class="htmx-indicator">
+        <div class="spinner"></div>
+        <p>Creating Jira ticket...</p>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<div class="example-section">
+    <h3>💡 Tips for Good Tickets</h3>
+    <div class="tips-grid">
+        <div class="tip-card">
+            <div class="tip-icon">📌</div>
+            <h4>Clear Summary</h4>
+            <p>Start with an action verb: "Implement", "Fix", "Add", "Update"</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">📝</div>
+            <h4>Detailed Description</h4>
+            <p>Include user story format, acceptance criteria, and technical details</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">🎯</div>
+            <h4>Right Issue Type</h4>
+            <p>Use Story for features, Task for work items, Bug for defects</p>
+        </div>
+        <div class="tip-card">
+            <div class="tip-icon">🏷️</div>
+            <h4>Useful Labels</h4>
+            <p>Add labels for filtering: team, sprint, component, priority</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

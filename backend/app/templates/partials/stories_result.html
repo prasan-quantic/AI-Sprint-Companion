@@ -1,0 +1,96 @@
+<div class="result-card">
+    <h2>📝 Generated User Stories</h2>
+
+    {% for story in result.stories %}
+    <div class="story-card">
+        <div class="story-header">
+            <h3>{{ story.title }}</h3>
+            {% if story.story_points %}
+            <span class="story-points">{{ story.story_points }} SP</span>
+            {% endif %}
+        </div>
+
+        <p class="story-description">{{ story.description }}</p>
+
+        {% if story.acceptance_criteria %}
+        <div class="acceptance-criteria">
+            <h4>Acceptance Criteria</h4>
+            <ul>
+                {% for criteria in story.acceptance_criteria %}
+                <li>{{ criteria }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="story-actions">
+            <form hx-post="/jira/create-from-story" hx-target="#jira-result-{{ loop.index }}" hx-indicator="#jira-loading-{{ loop.index }}" style="display: inline;">
+                <input type="hidden" name="title" value="{{ story.title }}">
+                <input type="hidden" name="description" value="{{ story.description }}">
+                <input type="hidden" name="acceptance_criteria" value="{{ story.acceptance_criteria | join('||') }}">
+                <input type="hidden" name="story_points" value="{{ story.story_points or '' }}">
+                <button type="submit" class="btn btn-jira btn-small">
+                    🔗 Create Jira Ticket
+                </button>
+            </form>
+            <span id="jira-loading-{{ loop.index }}" class="htmx-indicator spinner-small"></span>
+            <div id="jira-result-{{ loop.index }}" class="jira-inline-result"></div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if result.raw_insights %}
+    <div class="result-section insights">
+        <h3>💡 Additional Insights</h3>
+        <p>{{ result.raw_insights }}</p>
+    </div>
+    {% endif %}
+
+    <div class="bulk-actions">
+        <button
+            class="btn btn-primary"
+            id="bulk-create-stories-btn"
+        >
+            🚀 Create All Tickets in Jira ({{ result.stories | length }})
+        </button>
+        <span id="bulk-loading" class="spinner-small"></span>
+        <div id="bulk-jira-result"></div>
+    </div>
+</div>
+
+<script>
+// Store stories data for bulk creation
+window.generatedStories = [
+    {% for story in result.stories %}
+    {
+        "title": {{ story.title | tojson }},
+        "description": {{ story.description | tojson }},
+        "acceptance_criteria": {{ story.acceptance_criteria | tojson }},
+        "story_points": {{ story.story_points | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Handle bulk create
+document.getElementById('bulk-create-stories-btn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (confirm('Create {{ result.stories | length }} Jira tickets for all stories?')) {
+        document.getElementById('bulk-loading').style.display = 'inline-block';
+        fetch('/jira/create-all-stories', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(window.generatedStories)
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('bulk-jira-result').innerHTML = html;
+            document.getElementById('bulk-loading').style.display = 'none';
+        })
+        .catch(err => {
+            document.getElementById('bulk-jira-result').innerHTML =
+                '<span class="jira-error">❌ Error: ' + err.message + '</span>';
+            document.getElementById('bulk-loading').style.display = 'none';
+        });
+    }
+});
+</script>

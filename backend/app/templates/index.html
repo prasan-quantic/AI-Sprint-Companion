@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}AI Sprint Companion - Your Agile AI Assistant{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="welcome-badge">👋 Welcome to</div>
+    <h1>🚀 AI Sprint Companion</h1>
+    <p class="subtitle">Your intelligent Scrum assistant powered by AI. Streamline your agile workflow with automated standup summaries, user story generation, and sprint task suggestions.</p>
+    <p class="hero-cta">Get started by choosing a feature below or upload your documents directly!</p>
+</div>
+
+<!-- Quick Upload Section -->
+<section class="quick-upload-section">
+    <div class="upload-card">
+        <h2>📄 Quick Document Upload</h2>
+        <p class="upload-description">Upload your meeting notes, standup reports, or requirements documents and let AI do the heavy lifting!</p>
+
+        <div class="upload-tabs">
+            <button class="tab-btn active" onclick="switchTab('standup-tab')">📋 Standup Notes</button>
+            <button class="tab-btn" onclick="switchTab('stories-tab')">📝 Meeting Notes</button>
+            <button class="tab-btn" onclick="switchTab('tasks-tab')">✅ User Stories</button>
+        </div>
+
+        <div id="standup-tab" class="tab-content active">
+            <form hx-post="/standup/summarize" hx-target="#quick-result" hx-indicator="#quick-loading" hx-encoding="multipart/form-data">
+                <div class="file-upload-area" onclick="document.getElementById('standup-file').click()">
+                    <input type="file" id="standup-file" name="file" accept=".txt,.pdf,.doc,.docx" onchange="updateFileName(this, 'standup-file-name')">
+                    <div class="upload-icon">📁</div>
+                    <p class="upload-text">Click to upload or drag and drop</p>
+                    <p class="upload-formats">Supports: TXT, PDF, DOC, DOCX</p>
+                    <p id="standup-file-name" class="file-name"></p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small clear-file-btn" onclick="clearFileSelection('standup-file', 'standup-file-name'); event.stopPropagation();" style="display:none;" id="clear-standup-file">✕ Remove File</button>
+                <div class="upload-divider"><span>OR (file overrides text)</span></div>
+                <textarea name="entries_text" rows="4" placeholder="Enter standup notes manually...&#10;Format: Name: yesterday task | today task | blockers"></textarea>
+                <input type="text" name="sprint_goal" placeholder="Sprint Goal (optional)">
+                <button type="submit" class="btn btn-primary btn-large">🤖 Summarize Standup</button>
+            </form>
+        </div>
+
+        <div id="stories-tab" class="tab-content">
+            <form hx-post="/stories/generate" hx-target="#quick-result" hx-indicator="#quick-loading" hx-encoding="multipart/form-data">
+                <div class="file-upload-area" onclick="document.getElementById('stories-file').click()">
+                    <input type="file" id="stories-file" name="file" accept=".txt,.pdf,.doc,.docx" onchange="updateFileName(this, 'stories-file-name')">
+                    <div class="upload-icon">📁</div>
+                    <p class="upload-text">Click to upload or drag and drop</p>
+                    <p class="upload-formats">Supports: TXT, PDF, DOC, DOCX</p>
+                    <p id="stories-file-name" class="file-name"></p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small clear-file-btn" onclick="clearFileSelection('stories-file', 'stories-file-name'); event.stopPropagation();" style="display:none;" id="clear-stories-file">✕ Remove File</button>
+                <div class="upload-divider"><span>OR (file overrides text)</span></div>
+                <textarea name="notes" rows="4" placeholder="Paste your meeting notes here..."></textarea>
+                <input type="text" name="context" placeholder="Project Context (e.g., E-commerce platform)">
+                <button type="submit" class="btn btn-primary btn-large">🤖 Generate User Stories</button>
+            </form>
+        </div>
+
+        <div id="tasks-tab" class="tab-content">
+            <form hx-post="/tasks/suggest" hx-target="#quick-result" hx-indicator="#quick-loading" hx-encoding="multipart/form-data">
+                <div class="file-upload-area" onclick="document.getElementById('tasks-file').click()">
+                    <input type="file" id="tasks-file" name="file" accept=".txt,.pdf,.doc,.docx" onchange="updateFileName(this, 'tasks-file-name')">
+                    <div class="upload-icon">📁</div>
+                    <p class="upload-text">Click to upload or drag and drop</p>
+                    <p class="upload-formats">Supports: TXT, PDF, DOC, DOCX</p>
+                    <p id="tasks-file-name" class="file-name"></p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small clear-file-btn" onclick="clearFileSelection('tasks-file', 'tasks-file-name'); event.stopPropagation();" style="display:none;" id="clear-tasks-file">✕ Remove File</button>
+                <div class="upload-divider"><span>OR (file overrides text)</span></div>
+                <textarea name="user_stories" rows="4" placeholder="Enter user stories (one per line)...&#10;As a user, I want to..."></textarea>
+                <div class="form-row">
+                    <input type="number" name="team_capacity" placeholder="Team Capacity (SP)">
+                    <input type="number" name="sprint_duration" value="14" placeholder="Sprint Days">
+                </div>
+                <button type="submit" class="btn btn-primary btn-large">🤖 Suggest Tasks</button>
+            </form>
+        </div>
+
+        <div id="quick-loading" class="htmx-indicator">
+            <div class="spinner"></div>
+            <p>AI is processing your request...</p>
+        </div>
+
+        <div id="quick-result"></div>
+    </div>
+</section>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h2>Standup Summaries</h2>
+        <p>Automatically summarize daily standup notes into actionable insights, highlight blockers, and identify action items for your team.</p>
+        <a href="/standup" class="btn btn-primary">Try Standup Summary</a>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h2>User Story Generator</h2>
+        <p>Transform meeting notes and requirements into well-formatted user stories with acceptance criteria and story point estimates.</p>
+        <a href="/stories" class="btn btn-primary">Generate Stories</a>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h2>Sprint Task Suggestions</h2>
+        <p>Break down user stories into actionable sprint tasks with time estimates, priority levels, and planning recommendations.</p>
+        <a href="/tasks" class="btn btn-primary">Suggest Tasks</a>
+    </div>
+</div>
+
+<section class="how-it-works">
+    <h2>How It Works</h2>
+    <div class="steps">
+        <div class="step">
+            <span class="step-number">1</span>
+            <h3>Upload or Enter</h3>
+            <p>Upload your documents (.txt, .pdf, .doc, .docx) or type directly in the text area</p>
+        </div>
+        <div class="step">
+            <span class="step-number">2</span>
+            <h3>AI Processing</h3>
+            <p>Our AI analyzes your content and extracts meaningful insights</p>
+        </div>
+        <div class="step">
+            <span class="step-number">3</span>
+            <h3>Get Results</h3>
+            <p>Receive formatted summaries, user stories, or task breakdowns instantly</p>
+        </div>
+    </div>
+</section>
+
+<section class="tips-section">
+    <h2>💡 Pro Tips</h2>
+    <div class="tips-grid">
+        <div class="tip-card">
+            <h3>📋 Standup Format</h3>
+            <p>For best results, use this format:<br><code>Name: yesterday | today | blockers</code></p>
+        </div>
+        <div class="tip-card">
+            <h3>📝 Meeting Notes</h3>
+            <p>Include detailed requirements, user needs, and context for better user stories.</p>
+        </div>
+        <div class="tip-card">
+            <h3>✅ User Stories</h3>
+            <p>Use the standard format:<br><code>As a [role], I want [feature] so that [benefit]</code></p>
+        </div>
+    </div>
+</section>
+
+<section class="api-section">
+    <h2>🔌 REST API Available</h2>
+    <p>Integrate AI Sprint Companion into your existing workflow with our powerful REST API.</p>
+    <div class="api-endpoints">
+        <code>POST /api/standup/summarize</code>
+        <code>POST /api/stories/generate</code>
+        <code>POST /api/tasks/suggest</code>
+    </div>
+    <a href="/docs" class="btn btn-secondary" target="_blank">View API Documentation</a>
+</section>
+{% endblock %}

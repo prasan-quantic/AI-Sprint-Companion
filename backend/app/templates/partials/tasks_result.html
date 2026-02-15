@@ -1,0 +1,108 @@
+<div class="result-card">
+    <h2>✅ Suggested Sprint Tasks</h2>
+
+    {% if result.total_estimated_hours %}
+    <div class="total-hours">
+        <strong>Total Estimated Hours:</strong> {{ result.total_estimated_hours }} hours
+    </div>
+    {% endif %}
+
+    <div class="tasks-list">
+        {% for task in result.tasks %}
+        <div class="task-card priority-{{ task.priority }}">
+            <div class="task-header">
+                <h3>{{ task.title }}</h3>
+                <div class="task-meta">
+                    <span class="priority-badge {{ task.priority }}">{{ task.priority }}</span>
+                    {% if task.estimated_hours %}
+                    <span class="hours">{{ task.estimated_hours }}h</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p class="task-description">{{ task.description }}</p>
+
+            {% if task.parent_story %}
+            <div class="parent-story">
+                <small>📌 Related to: {{ task.parent_story }}</small>
+            </div>
+            {% endif %}
+
+            <div class="task-actions">
+                <form hx-post="/jira/create-from-task" hx-target="#task-jira-result-{{ loop.index }}" hx-indicator="#task-jira-loading-{{ loop.index }}" style="display: inline;">
+                    <input type="hidden" name="title" value="{{ task.title }}">
+                    <input type="hidden" name="description" value="{{ task.description }}">
+                    <input type="hidden" name="priority" value="{{ task.priority }}">
+                    <input type="hidden" name="estimated_hours" value="{{ task.estimated_hours or '' }}">
+                    <input type="hidden" name="parent_story" value="{{ task.parent_story or '' }}">
+                    <button type="submit" class="btn btn-jira btn-small">
+                        🔗 Create Jira Ticket
+                    </button>
+                </form>
+                <span id="task-jira-loading-{{ loop.index }}" class="htmx-indicator spinner-small"></span>
+                <div id="task-jira-result-{{ loop.index }}" class="jira-inline-result"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if result.recommendations %}
+    <div class="result-section recommendations">
+        <h3>💡 Recommendations</h3>
+        <ul>
+            {% for rec in result.recommendations %}
+            <li>{{ rec }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="bulk-actions">
+        <button
+            class="btn btn-primary"
+            id="bulk-create-tasks-btn"
+        >
+            🚀 Create All Tickets in Jira ({{ result.tasks | length }})
+        </button>
+        <span id="bulk-task-loading" class="spinner-small"></span>
+        <div id="bulk-task-jira-result"></div>
+    </div>
+</div>
+
+<script>
+// Store tasks data for bulk creation
+window.generatedTasks = [
+    {% for task in result.tasks %}
+    {
+        "title": {{ task.title | tojson }},
+        "description": {{ task.description | tojson }},
+        "priority": {{ task.priority | tojson }},
+        "estimated_hours": {{ task.estimated_hours | tojson }},
+        "parent_story": {{ task.parent_story | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Handle bulk create
+document.getElementById('bulk-create-tasks-btn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (confirm('Create {{ result.tasks | length }} Jira tickets for all tasks?')) {
+        document.getElementById('bulk-task-loading').style.display = 'inline-block';
+        fetch('/jira/create-all-tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(window.generatedTasks)
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('bulk-task-jira-result').innerHTML = html;
+            document.getElementById('bulk-task-loading').style.display = 'none';
+        })
+        .catch(err => {
+            document.getElementById('bulk-task-jira-result').innerHTML =
+                '<span class="jira-error">❌ Error: ' + err.message + '</span>';
+            document.getElementById('bulk-task-loading').style.display = 'none';
+        });
+    }
+});
+</script>

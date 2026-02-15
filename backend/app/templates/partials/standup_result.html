@@ -1,0 +1,370 @@
+<div class="result-card">
+    <h2>📊 Standup Summary</h2>
+
+    <div class="result-section">
+        <h3>Summary</h3>
+        <p>{{ result.summary }}</p>
+    </div>
+
+    {% if result.key_blockers %}
+    <div class="result-section blockers">
+        <h3>🚧 Key Blockers</h3>
+        <ul>
+            {% for blocker in result.key_blockers %}
+            <li class="blocker-item">
+                <span class="blocker-text">{{ blocker }}</span>
+                <div class="item-actions">
+                    <form hx-post="/jira/create-from-standup" hx-target="#blocker-jira-result-{{ loop.index }}" hx-indicator="#blocker-jira-loading-{{ loop.index }}" style="display: inline;">
+                        <input type="hidden" name="title" value="Blocker: {{ blocker }}">
+                        <input type="hidden" name="description" value="{{ blocker }}">
+                        <input type="hidden" name="item_type" value="blocker">
+                        <input type="hidden" name="summary_context" value="{{ result.summary }}">
+                        <select name="issue_type" class="issue-type-select">
+                            <option value="Task">Task</option>
+                            <option value="Story">Story</option>
+                            <option value="Bug">Bug</option>
+                        </select>
+                        <button type="submit" class="btn btn-jira btn-small">🔗 Create Jira</button>
+                    </form>
+                    <span id="blocker-jira-loading-{{ loop.index }}" class="htmx-indicator spinner-small"></span>
+                    <div id="blocker-jira-result-{{ loop.index }}" class="jira-inline-result"></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if result.action_items %}
+    <div class="result-section actions">
+        <h3>✅ Action Items</h3>
+        <ul>
+            {% for item in result.action_items %}
+            <li class="action-item">
+                <span class="action-text">{{ item }}</span>
+                <div class="item-actions">
+                    <form hx-post="/jira/create-from-standup" hx-target="#action-jira-result-{{ loop.index }}" hx-indicator="#action-jira-loading-{{ loop.index }}" style="display: inline;">
+                        <input type="hidden" name="title" value="{{ item }}">
+                        <input type="hidden" name="description" value="{{ item }}">
+                        <input type="hidden" name="item_type" value="action">
+                        <input type="hidden" name="summary_context" value="{{ result.summary }}">
+                        <select name="issue_type" class="issue-type-select">
+                            <option value="Task" selected>Task</option>
+                            <option value="Story">Story</option>
+                            <option value="Bug">Bug</option>
+                        </select>
+                        <button type="submit" class="btn btn-jira btn-small">🔗 Create Jira</button>
+                    </form>
+                    <span id="action-jira-loading-{{ loop.index }}" class="htmx-indicator spinner-small"></span>
+                    <div id="action-jira-result-{{ loop.index }}" class="jira-inline-result"></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if result.suggested_tasks %}
+    <div class="result-section tasks">
+        <h3>📋 Suggested Tasks</h3>
+        <div class="tasks-grid">
+            {% for task in result.suggested_tasks %}
+            <div class="task-card priority-{{ task.priority }}">
+                <div class="task-header">
+                    <h4>{{ task.title }}</h4>
+                    <span class="priority-badge {{ task.priority }}">{{ task.priority }}</span>
+                </div>
+                <p class="task-description">{{ task.description }}</p>
+                <div class="task-meta">
+                    {% if task.estimated_hours %}
+                    <span class="meta-item">⏱️ {{ task.estimated_hours }}h</span>
+                    {% endif %}
+                    {% if task.parent_story %}
+                    <span class="meta-item">📖 {{ task.parent_story }}</span>
+                    {% endif %}
+                </div>
+                <div class="task-actions">
+                    <form hx-post="/jira/create-from-task" hx-target="#task-jira-result-{{ loop.index }}" hx-indicator="#task-jira-loading-{{ loop.index }}" style="display: inline;">
+                        <input type="hidden" name="title" value="{{ task.title }}">
+                        <input type="hidden" name="description" value="{{ task.description }}">
+                        <input type="hidden" name="priority" value="{{ task.priority }}">
+                        <input type="hidden" name="estimated_hours" value="{{ task.estimated_hours or '' }}">
+                        <input type="hidden" name="parent_story" value="{{ task.parent_story or '' }}">
+                        <button type="submit" class="btn btn-jira btn-small">🔗 Create Jira Task</button>
+                    </form>
+                    <span id="task-jira-loading-{{ loop.index }}" class="htmx-indicator spinner-small"></span>
+                    <div id="task-jira-result-{{ loop.index }}" class="jira-inline-result"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if result.suggested_stories %}
+    <div class="result-section stories">
+        <h3>📝 Suggested User Stories</h3>
+        <div class="stories-grid">
+            {% for story in result.suggested_stories %}
+            <div class="story-card">
+                <div class="story-header">
+                    <h4>{{ story.title }}</h4>
+                    {% if story.story_points %}
+                    <span class="story-points">{{ story.story_points }} SP</span>
+                    {% endif %}
+                </div>
+                <p class="story-description">{{ story.description }}</p>
+                {% if story.acceptance_criteria %}
+                <div class="acceptance-criteria">
+                    <strong>Acceptance Criteria:</strong>
+                    <ul>
+                        {% for criteria in story.acceptance_criteria %}
+                        <li>{{ criteria }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <div class="story-actions">
+                    <form hx-post="/jira/create-from-story" hx-target="#story-jira-result-{{ loop.index }}" hx-indicator="#story-jira-loading-{{ loop.index }}" style="display: inline;">
+                        <input type="hidden" name="title" value="{{ story.title }}">
+                        <input type="hidden" name="description" value="{{ story.description }}">
+                        <input type="hidden" name="acceptance_criteria" value="{{ story.acceptance_criteria | join('||') }}">
+                        <input type="hidden" name="story_points" value="{{ story.story_points or '' }}">
+                        <button type="submit" class="btn btn-jira btn-small">🔗 Create Jira Story</button>
+                    </form>
+                    <span id="story-jira-loading-{{ loop.index }}" class="htmx-indicator spinner-small"></span>
+                    <div id="story-jira-result-{{ loop.index }}" class="jira-inline-result"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bulk-actions">
+        <button class="btn btn-primary" id="bulk-create-standup-btn">
+            🚀 Create All Items in Jira ({{ (result.action_items | length) + (result.key_blockers | length) + (result.suggested_tasks | length) + (result.suggested_stories | length) }})
+        </button>
+        <span id="bulk-standup-loading" class="spinner-small"></span>
+        <div id="bulk-standup-jira-result"></div>
+    </div>
+</div>
+
+<script>
+// Store standup data for bulk creation
+window.standupData = {
+    summary: {{ result.summary | tojson }},
+    blockers: {{ result.key_blockers | tojson }},
+    action_items: {{ result.action_items | tojson }},
+    suggested_tasks: {{ result.suggested_tasks | tojson if result.suggested_tasks else '[]' | safe }},
+    suggested_stories: {{ result.suggested_stories | tojson if result.suggested_stories else '[]' | safe }}
+};
+
+// Handle bulk create
+document.getElementById('bulk-create-standup-btn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    const totalItems = (window.standupData.blockers?.length || 0) +
+                       (window.standupData.action_items?.length || 0) +
+                       (window.standupData.suggested_tasks?.length || 0) +
+                       (window.standupData.suggested_stories?.length || 0);
+    if (confirm(`Create ${totalItems} Jira tickets for all items?`)) {
+        document.getElementById('bulk-standup-loading').style.display = 'inline-block';
+        fetch('/jira/create-all-standup-items', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(window.standupData)
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('bulk-standup-jira-result').innerHTML = html;
+            document.getElementById('bulk-standup-loading').style.display = 'none';
+        })
+        .catch(err => {
+            document.getElementById('bulk-standup-jira-result').innerHTML =
+                '<span class="jira-error">❌ Error: ' + err.message + '</span>';
+            document.getElementById('bulk-standup-loading').style.display = 'none';
+        });
+    }
+});
+</script>
+
+<style>
+.blocker-item,
+.action-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.blocker-item:last-child,
+.action-item:last-child {
+    border-bottom: none;
+}
+
+.blocker-text,
+.action-text {
+    flex: 1;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.issue-type-select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: white;
+}
+
+.result-section.blockers ul,
+.result-section.actions ul {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+/* Tasks Grid */
+.tasks-grid,
+.stories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.task-card,
+.story-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    transition: box-shadow 0.2s;
+}
+
+.task-card:hover,
+.story-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.task-card.priority-high {
+    border-left: 4px solid #dc3545;
+}
+
+.task-card.priority-medium {
+    border-left: 4px solid #ffc107;
+}
+
+.task-card.priority-low {
+    border-left: 4px solid #28a745;
+}
+
+.task-header,
+.story-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.task-header h4,
+.story-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.priority-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.priority-badge.high {
+    background: #ffe5e5;
+    color: #dc3545;
+}
+
+.priority-badge.medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.priority-badge.low {
+    background: #d4edda;
+    color: #155724;
+}
+
+.story-points {
+    background: #e7f1ff;
+    color: #0056b3;
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.task-description,
+.story-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.task-meta {
+    display: flex;
+    gap: 12px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.acceptance-criteria {
+    background: #f0f7ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+}
+
+.acceptance-criteria ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+.acceptance-criteria li {
+    margin: 4px 0;
+}
+
+.task-actions,
+.story-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e9ecef;
+}
+
+.result-section.tasks,
+.result-section.stories {
+    margin-top: 24px;
+}
+
+.result-section.tasks h3,
+.result-section.stories h3 {
+    margin-bottom: 8px;
+}
+</style>

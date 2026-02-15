@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "ai-sprint-companion": {
+      "command": "python",
+      "args": ["-m", "app.mcp_server"],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+        "JIRA_URL": "${env:JIRA_URL}",
+        "JIRA_EMAIL": "${env:JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${env:JIRA_API_TOKEN}",
+        "JIRA_PROJECT_KEY": "${env:JIRA_PROJECT_KEY}"
+      }
+    }
+  }
+}
+

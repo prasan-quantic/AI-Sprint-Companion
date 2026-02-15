@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Sprint Task Suggestions - AI Sprint Companion{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>✅ Sprint Task Suggestions</h1>
+    <p>Break down user stories into actionable tasks with time estimates and priority recommendations.</p>
+</div>
+
+<div class="help-banner">
+    <div class="help-icon">💡</div>
+    <div class="help-content">
+        <strong>How to use:</strong> Upload a document with user stories or enter them manually (one per line).
+        Use the format: <code>As a [role], I want [feature] so that [benefit]</code>
+    </div>
+</div>
+
+<div class="form-container">
+    <form hx-post="/tasks/suggest" hx-target="#result" hx-indicator="#loading" hx-encoding="multipart/form-data">
+        <div class="form-group">
+            <label for="file">📁 Upload User Stories Document</label>
+            <div class="file-upload-area" onclick="document.getElementById('file').click()">
+                <input type="file" id="file" name="file" accept=".txt,.pdf,.doc,.docx" onchange="updateFileName(this, 'file-name-display')">
+                <div class="upload-icon">📄</div>
+                <p class="upload-text">Click to upload or drag and drop your file</p>
+                <p class="upload-formats">Supported formats: TXT, PDF, DOC, DOCX</p>
+                <p id="file-name-display" class="file-name"></p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-small clear-file-btn" onclick="clearFileSelection('file', 'file-name-display'); event.stopPropagation();" style="display:none;">✕ Remove File</button>
+            <button type="submit" class="btn btn-primary btn-file-action" id="file-action-btn" style="display:none;">✅ Suggest Tasks</button>
+        </div>
+
+        <div class="upload-divider"><span>OR ENTER MANUALLY (file upload overrides text below)</span></div>
+
+        <div class="form-group">
+            <label for="user_stories">✍️ User Stories</label>
+            <textarea
+                id="user_stories"
+                name="user_stories"
+                rows="8"
+                placeholder="Enter user stories (one per line)...
+
+Example:
+As a user, I want to reset my password so that I can regain access to my account
+As an admin, I want to view all user accounts so that I can manage the user base
+As a user, I want to enable 2FA so that my account is more secure"
+            ></textarea>
+            <small class="form-hint">💡 Tip: Enter one user story per line for best results</small>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="team_capacity">👥 Team Capacity (Story Points)</label>
+                <input
+                    type="number"
+                    id="team_capacity"
+                    name="team_capacity"
+                    min="1"
+                    max="100"
+                    placeholder="e.g., 40"
+                >
+                <small class="form-hint">Optional: Helps prioritize tasks</small>
+            </div>
+
+            <div class="form-group">
+                <label for="sprint_duration">📅 Sprint Duration (Days)</label>
+                <input
+                    type="number"
+                    id="sprint_duration"
+                    name="sprint_duration"
+                    min="1"
+                    max="30"
+                    value="14"
+                >
+                <small class="form-hint">Default: 14 days (2 weeks)</small>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large btn-full">
+            🤖 Suggest Tasks
+        </button>
+    </form>
+
+    <div id="loading" class="htmx-indicator">
+        <div class="spinner"></div>
+        <p>Breaking down user stories with AI...</p>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<div class="example-section">
+    <h3>📝 Example Input</h3>
+    <div class="example-card">
+        <pre>As a user, I want to reset my password via email so that I can regain access to my account
+As an admin, I want to view and manage all user accounts so that I can maintain platform security
+As a user, I want to enable two-factor authentication so that my account is more secure</pre>
+        <button class="btn btn-secondary btn-small" onclick="fillExample()">Use This Example</button>
+    </div>
+</div>
+
+<script>
+function fillExample() {
+    document.getElementById('user_stories').value = `As a user, I want to reset my password via email so that I can regain access to my account
+As an admin, I want to view and manage all user accounts so that I can maintain platform security
+As a user, I want to enable two-factor authentication so that my account is more secure`;
+    document.getElementById('team_capacity').value = '30';
+}
+
+function clearFileSelection(fileInputId, displayId) {
+    const fileInput = document.getElementById(fileInputId);
+    const displayElement = document.getElementById(displayId);
+    const form = fileInput.closest('form');
+    const textarea = form ? form.querySelector('textarea') : null;
+    const clearBtn = form ? form.querySelector('.clear-file-btn') : null;
+    const actionBtn = form ? form.querySelector('.btn-file-action') : null;
+    const uploadArea = fileInput.closest('.file-upload-area');
+
+    // Clear file input
+    fileInput.value = '';
+    if (displayElement) {
+        displayElement.innerText = '';
+    }
+
+    // Hide buttons
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    if (actionBtn) {
+        actionBtn.style.display = 'none';
+    }
+
+    // Reset upload area style
+    if (uploadArea) {
+        uploadArea.style.borderColor = '';
+        uploadArea.style.backgroundColor = '';
+    }
+
+    // Re-enable textarea and restore its state
+    if (textarea) {
+        textarea.style.backgroundColor = '';
+        textarea.style.borderColor = '';
+        textarea.style.cursor = '';
+        textarea.style.opacity = '';
+        textarea.placeholder = `Enter user stories (one per line)...
+
+Example:
+As a user, I want to reset my password so that I can regain access to my account
+As an admin, I want to view all user accounts so that I can manage the user base
+As a user, I want to enable 2FA so that my account is more secure`;
+        // Restore previous value if available
+        if (textarea.dataset.previousValue) {
+            textarea.value = textarea.dataset.previousValue;
+            delete textarea.dataset.previousValue;
+        } else {
+            textarea.value = '';
+        }
+    }
+}
+</script>
+{% endblock %}

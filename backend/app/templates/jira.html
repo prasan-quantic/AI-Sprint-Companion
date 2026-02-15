@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Jira Integration - AI Sprint Companion{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔗 Jira Integration</h1>
+    <p>Create Jira tickets from your AI-generated content or browse your recent items.</p>
+</div>
+
+{% if not jira_configured %}
+<div class="warning-banner">
+    <div class="warning-icon">⚠️</div>
+    <div class="warning-content">
+        <strong>Jira Not Configured</strong>
+        <p>To use Jira integration, please set up the following environment variables:</p>
+        <ul>
+            <li><code>JIRA_URL</code> - Your Jira instance URL</li>
+            <li><code>JIRA_EMAIL</code> - Your Jira account email</li>
+            <li><code>JIRA_API_TOKEN</code> - Your Jira API token</li>
+            <li><code>JIRA_PROJECT_KEY</code> - The project key (e.g., KAN)</li>
+        </ul>
+    </div>
+</div>
+{% else %}
+<div class="help-banner success-banner">
+    <div class="help-icon">✅</div>
+    <div class="help-content">
+        <strong>Jira Connected!</strong> Project: <code>{{ project_key }}</code> at <code>{{ jira_url }}</code>
+    </div>
+</div>
+{% endif %}
+
+<div class="jira-workflow">
+    <h2>📋 Quick Workflow</h2>
+    <div class="workflow-steps">
+        <div class="workflow-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <h3>📝 Generate User Stories</h3>
+                <p>Use the User Stories page to generate stories from your meeting notes.</p>
+                <a href="/stories" class="btn btn-secondary">Go to User Stories →</a>
+            </div>
+        </div>
+        <div class="workflow-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <h3>✅ Create Sprint Tasks</h3>
+                <p>Break down your user stories into actionable sprint tasks.</p>
+                <a href="/tasks" class="btn btn-secondary">Go to Sprint Tasks →</a>
+            </div>
+        </div>
+        <div class="workflow-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <h3>🚀 Push to Jira</h3>
+                <p>Click "Create Jira Ticket" on any generated item to push it to Jira!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"><span>OR CREATE MANUALLY</span></div>
+
+<div class="form-container">
+    <h2>✏️ Create Ticket Manually</h2>
+    <form hx-post="/jira/create" hx-target="#result" hx-indicator="#loading">
+        <div class="form-row">
+            <div class="form-group flex-2">
+                <label for="summary">📌 Summary / Title</label>
+                <input
+                    type="text"
+                    id="summary"
+                    name="summary"
+                    required
+                    maxlength="255"
+                    placeholder="e.g., Implement user password reset functionality"
+                >
+            </div>
+            <div class="form-group">
+                <label for="issue_type">📋 Type</label>
+                <select id="issue_type" name="issue_type">
+                    <option value="Story">Story</option>
+                    <option value="Task" selected>Task</option>
+                    <option value="Bug">Bug</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description">📝 Description</label>
+            <textarea
+                id="description"
+                name="description"
+                rows="6"
+                required
+                placeholder="Detailed description of the work to be done..."
+            ></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="priority">🎯 Priority</label>
+                <select id="priority" name="priority">
+                    <option value="">Default</option>
+                    <option value="Highest">Highest</option>
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Lowest">Lowest</option>
+                </select>
+            </div>
+            <div class="form-group flex-2">
+                <label for="labels">🏷️ Labels (comma-separated)</label>
+                <input
+                    type="text"
+                    id="labels"
+                    name="labels"
+                    placeholder="e.g., frontend, sprint-5"
+                >
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large btn-full" {% if not jira_configured %}disabled{% endif %}>
+            🚀 Create Jira Ticket
+        </button>
+    </form>
+
+    <div id="loading" class="htmx-indicator">
+        <div class="spinner"></div>
+        <p>Creating Jira ticket...</p>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<style>
+.jira-workflow {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    margin: 20px 0;
+    box-shadow: var(--shadow);
+}
+
+.jira-workflow h2 {
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.workflow-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.workflow-step {
+    background: var(--background);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.step-number {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: var(--primary-color);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.step-content h3 {
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.step-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 30px 0;
+    color: var(--text-secondary);
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.divider span {
+    padding: 0 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-row .form-group.flex-2 {
+    flex: 2;
+}
+
+.success-banner {
+    background: #ecfdf5;
+    border-color: #10b981;
+}
+
+.success-banner .help-icon {
+    color: #10b981;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .workflow-steps {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+

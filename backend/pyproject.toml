@@ -1,0 +1,30 @@
+[project]
+name = "ai-sprint-companion"
+version = "1.0.0"
+description = "An AI-assisted Scrum helper that summarizes standups, drafts user stories, and suggests sprint tasks"
+readme = "../Readme.MD"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "AI Sprint Companion Team"}
+]
+keywords = ["ai", "scrum", "agile", "sprint", "fastapi"]
+
+[project.urls]
+Homepage = "https://github.com/YOUR_ORG/ai-sprint-companion"
+Repository = "https://github.com/YOUR_ORG/ai-sprint-companion"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]

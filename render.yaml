@@ -1,0 +1,67 @@
+# Render.com Deployment Blueprint
+# ================================
+# This file defines the infrastructure for deploying AI Sprint Companion
+# to Render.com's free tier.
+#
+# To deploy:
+# 1. Push this repository to GitHub
+# 2. Go to https://dashboard.render.com/
+# 3. Click "New" -> "Blueprint"
+# 4. Connect your GitHub repository
+# 5. Render will automatically detect this render.yaml file
+#
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  # Main Web Service - AI Sprint Companion Backend
+  - type: web
+    name: ai-sprint-companion
+    runtime: python
+    region: oregon  # Free tier available in oregon
+    plan: free      # Free tier plan
+
+    # Build configuration
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    # Environment variables
+    envVars:
+      # Python configuration
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+      # Application configuration
+      - key: AI_PROVIDER
+        value: mock  # Use 'openai' or 'azure' for production with real AI
+
+      # OpenAI Configuration (set these in Render dashboard for security)
+      - key: OPENAI_API_KEY
+        sync: false  # Must be set manually in dashboard
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+
+      # Azure OpenAI Configuration (optional, set in dashboard if using Azure)
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        value: gpt-4o-mini
+
+      # Jira Integration (optional, set in dashboard)
+      - key: JIRA_URL
+        sync: false
+      - key: JIRA_EMAIL
+        sync: false
+      - key: JIRA_API_TOKEN
+        sync: false
+      - key: JIRA_PROJECT_KEY
+        sync: false
+
+    # Health check endpoint
+    healthCheckPath: /health
+
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+

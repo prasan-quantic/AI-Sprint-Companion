@@ -1,0 +1,31 @@
+# AI Sprint Companion - Production Dependencies
+# =============================================
+# This file contains only production dependencies (no dev/test packages)
+# Used for Render.com deployment to minimize build time
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+jinja2>=3.1.2
+aiofiles>=23.0.0
+
+# AI/LLM Integration
+openai>=1.0.0
+
+# Document Parsing
+python-docx>=0.8.11
+PyPDF2>=3.0.0
+lxml>=4.9.0
+
+# HTTP Client (for Jira integration)
+httpx>=0.24.0
+
+# Configuration
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+
+# MCP (Model Context Protocol) for AI Agent integration
+mcp>=1.0.0
+

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}User Story Generator - AI Sprint Companion{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📝 User Story Generator</h1>
+    <p>Transform your meeting notes and requirements into well-structured user stories with acceptance criteria.</p>
+</div>
+
+<div class="help-banner">
+    <div class="help-icon">💡</div>
+    <div class="help-content">
+        <strong>How to use:</strong> Upload meeting notes, requirements documents, or paste text directly.
+        The AI will extract user stories in the format: <code>As a [role], I want [feature] so that [benefit]</code>
+    </div>
+</div>
+
+<div class="form-container">
+    <form hx-post="/stories/generate" hx-target="#result" hx-indicator="#loading" hx-encoding="multipart/form-data">
+        <div class="form-group">
+            <label for="file">📁 Upload Meeting Notes / Requirements</label>
+            <div class="file-upload-area" onclick="document.getElementById('file').click()">
+                <input type="file" id="file" name="file" accept=".txt,.pdf,.doc,.docx" onchange="updateFileName(this, 'file-name-display')">
+                <div class="upload-icon">📄</div>
+                <p class="upload-text">Click to upload or drag and drop your file</p>
+                <p class="upload-formats">Supported formats: TXT, PDF, DOC, DOCX</p>
+                <p id="file-name-display" class="file-name"></p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-small clear-file-btn" onclick="clearFileSelection('file', 'file-name-display'); event.stopPropagation();" style="display:none;">✕ Remove File</button>
+            <button type="submit" class="btn btn-primary btn-file-action" id="file-action-btn" style="display:none;">📝 Generate User Stories</button>
+        </div>
+
+        <div class="upload-divider"><span>OR ENTER MANUALLY (file upload overrides text below)</span></div>
+
+        <div class="form-group">
+            <label for="notes">✍️ Meeting Notes</label>
+            <textarea
+                id="notes"
+                name="notes"
+                rows="10"
+                placeholder="Paste your meeting notes here...
+
+Example:
+We discussed the need for users to be able to reset their passwords. They should receive an email with a reset link that expires after 24 hours. Also, we need a way for admins to view all user accounts and deactivate suspicious ones. The team mentioned adding two-factor authentication as a future enhancement."
+            ></textarea>
+            <small class="form-hint">💡 Tip: Include as much detail as possible - user needs, requirements, and context help generate better stories</small>
+        </div>
+
+        <div class="form-group">
+            <label for="context">🏢 Project Context (Optional)</label>
+            <input
+                type="text"
+                id="context"
+                name="context"
+                placeholder="e.g., E-commerce platform, Healthcare app, SaaS dashboard"
+            >
+            <small class="form-hint">Providing context helps AI tailor the user stories to your domain</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large btn-full">
+            🤖 Generate User Stories
+        </button>
+    </form>
+
+    <div id="loading" class="htmx-indicator">
+        <div class="spinner"></div>
+        <p>Extracting user stories with AI...</p>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<div class="example-section">
+    <h3>📝 Example Input</h3>
+    <div class="example-card">
+        <pre>In today's stakeholder meeting, we discussed several new features:
+
+1. Users are having trouble resetting their passwords. They need a way to request a reset link via email, and the link should expire after 24 hours for security.
+
+2. The admin team wants to be able to view all registered users and have the ability to deactivate accounts that look suspicious.
+
+3. For better security, we should add two-factor authentication as an option. Users can enable it in their settings.</pre>
+        <button class="btn btn-secondary btn-small" onclick="fillExample()">Use This Example</button>
+    </div>
+</div>
+
+<script>
+function fillExample() {
+    document.getElementById('notes').value = `In today's stakeholder meeting, we discussed several new features:
+
+1. Users are having trouble resetting their passwords. They need a way to request a reset link via email, and the link should expire after 24 hours for security.
+
+2. The admin team wants to be able to view all registered users and have the ability to deactivate accounts that look suspicious.
+
+3. For better security, we should add two-factor authentication as an option. Users can enable it in their settings.`;
+    document.getElementById('context').value = 'Security-focused web application';
+}
+
+function clearFileSelection(fileInputId, fileNameDisplayId) {
+    const fileInput = document.getElementById(fileInputId);
+    const displayElement = document.getElementById(fileNameDisplayId);
+    const form = fileInput.closest('form');
+    const textarea = form ? form.querySelector('textarea') : null;
+    const clearBtn = form ? form.querySelector('.clear-file-btn') : null;
+    const actionBtn = form ? form.querySelector('.btn-file-action') : null;
+    const uploadArea = fileInput.closest('.file-upload-area');
+
+    // Clear file input
+    fileInput.value = '';
+    if (displayElement) {
+        displayElement.innerText = '';
+        displayElement.style.display = 'none';
+    }
+
+    // Hide buttons
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    if (actionBtn) {
+        actionBtn.style.display = 'none';
+    }
+
+    // Reset upload area style
+    if (uploadArea) {
+        uploadArea.style.borderColor = '';
+        uploadArea.style.backgroundColor = '';
+    }
+
+    // Re-enable textarea and restore its state
+    if (textarea) {
+        textarea.style.backgroundColor = '';
+        textarea.style.borderColor = '';
+        textarea.style.cursor = '';
+        textarea.style.opacity = '';
+        textarea.placeholder = `Paste your meeting notes here...
+
+Example:
+We discussed the need for users to be able to reset their passwords. They should receive an email with a reset link that expires after 24 hours. Also, we need a way for admins to view all user accounts and deactivate suspicious ones. The team mentioned adding two-factor authentication as a future enhancement.`;
+        // Restore previous value if available
+        if (textarea.dataset.previousValue) {
+            textarea.value = textarea.dataset.previousValue;
+            delete textarea.dataset.previousValue;
+        } else {
+            textarea.value = '';
+        }
+    }
+}
+</script>
+{% endblock %}

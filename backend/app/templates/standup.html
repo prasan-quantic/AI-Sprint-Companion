@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Standup Summary - AI Sprint Companion{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Standup Summary</h1>
+    <p>Transform your team's daily standup notes into actionable insights with AI-powered analysis.</p>
+</div>
+
+<div class="help-banner">
+    <div class="help-icon">💡</div>
+    <div class="help-content">
+        <strong>How to use:</strong> Upload a document containing standup notes or enter them manually below.
+        Use the format: <code>Name: yesterday task | today task | blockers</code>
+    </div>
+</div>
+
+<div class="form-container">
+    <form hx-post="/standup/summarize" hx-target="#result" hx-indicator="#loading" hx-encoding="multipart/form-data">
+        <div class="form-group">
+            <label for="file">📁 Upload Standup Document</label>
+            <div class="file-upload-area" onclick="document.getElementById('file').click()">
+                <input type="file" id="file" name="file" accept=".txt,.pdf,.doc,.docx" onchange="updateFileName(this, 'file-name-display')">
+                <div class="upload-icon">📄</div>
+                <p class="upload-text">Click to upload or drag and drop your file</p>
+                <p class="upload-formats">Supported formats: TXT, PDF, DOC, DOCX</p>
+                <p id="file-name-display" class="file-name"></p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-small clear-file-btn" onclick="clearFileSelection('file', 'file-name-display'); event.stopPropagation();" style="display:none;">✕ Remove File</button>
+            <button type="submit" class="btn btn-primary btn-file-action" id="file-action-btn" style="display:none;">📋 Summarize Standup</button>
+        </div>
+
+        <div class="upload-divider"><span>OR ENTER MANUALLY (file upload overrides text below)</span></div>
+
+        <div class="form-group">
+            <label for="entries_text">✍️ Standup Entries</label>
+            <textarea
+                id="entries_text"
+                name="entries_text"
+                rows="10"
+                placeholder="Enter standup entries in format:
+Name: yesterday task | today task | blockers
+
+Example:
+Alice: Completed user auth API | Working on dashboard UI | Waiting for design specs
+Bob: Fixed login bug | Code review and testing | None
+Carol: Sprint planning meeting | Starting payment integration | Need API credentials"
+            ></textarea>
+            <small class="form-hint">💡 Tip: Each line should follow the format: <strong>Name: yesterday | today | blockers</strong></small>
+        </div>
+
+        <div class="form-group">
+            <label for="sprint_goal">🎯 Sprint Goal (Optional)</label>
+            <input
+                type="text"
+                id="sprint_goal"
+                name="sprint_goal"
+                placeholder="e.g., Complete user authentication and dashboard MVP"
+            >
+            <small class="form-hint">Adding a sprint goal helps AI provide more contextual insights</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large btn-full">
+            🤖 Generate Summary
+        </button>
+    </form>
+
+    <div id="loading" class="htmx-indicator">
+        <div class="spinner"></div>
+        <p>Analyzing standup notes with AI...</p>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<div class="example-section">
+    <h3>📝 Example Input</h3>
+    <div class="example-card">
+        <pre>Alice: Completed user authentication API | Working on dashboard components | Waiting for design mockups
+Bob: Fixed critical login bug | Code review for Alice's PR | None
+Carol: Sprint planning preparation | Starting payment integration | Need API credentials from finance</pre>
+        <button class="btn btn-secondary btn-small" onclick="fillExample()">Use This Example</button>
+        <button class="btn btn-primary btn-small" onclick="fillExampleAndSubmit()">Use Example & Generate</button>
+    </div>
+</div>
+
+<script>
+function fillExample() {
+    // Clear any file selection first
+    const fileInput = document.getElementById('file');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    if (fileNameDisplay) {
+        fileNameDisplay.innerText = '';
+    }
+
+    // Hide file-related buttons
+    const clearBtn = document.querySelector('.clear-file-btn');
+    const actionBtn = document.querySelector('.btn-file-action');
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (actionBtn) actionBtn.style.display = 'none';
+
+    // Reset upload area style
+    const uploadArea = document.querySelector('.file-upload-area');
+    if (uploadArea) {
+        uploadArea.style.borderColor = '';
+        uploadArea.style.backgroundColor = '';
+    }
+
+    // Reset textarea style
+    const textarea = document.getElementById('entries_text');
+    if (textarea) {
+        textarea.style.backgroundColor = '';
+        textarea.style.borderColor = '';
+    }
+
+    // Fill in the example content
+    document.getElementById('entries_text').value = `Alice: Completed user authentication API | Working on dashboard components | Waiting for design mockups
+Bob: Fixed critical login bug | Code review for Alice's PR | None
+Carol: Sprint planning preparation | Starting payment integration | Need API credentials from finance`;
+    document.getElementById('sprint_goal').value = 'Complete user authentication and basic dashboard MVP';
+}
+
+function fillExampleAndSubmit() {
+    fillExample();
+    // Trigger form submission after a brief delay to ensure values are set
+    setTimeout(function() {
+        const form = document.querySelector('form');
+        if (form) {
+            htmx.trigger(form, 'submit');
+        }
+    }, 100);
+}
+
+function clearFileSelection(fileInputId, fileNameDisplayId) {
+    const fileInput = document.getElementById(fileInputId);
+    const displayElement = document.getElementById(fileNameDisplayId);
+    const form = fileInput.closest('form');
+    const textarea = form ? form.querySelector('textarea') : null;
+    const clearBtn = form ? form.querySelector('.clear-file-btn') : null;
+    const actionBtn = form ? form.querySelector('.btn-file-action') : null;
+    const uploadArea = fileInput.closest('.file-upload-area');
+
+    // Clear file input
+    fileInput.value = '';
+    if (displayElement) {
+        displayElement.innerText = '';
+    }
+
+    // Hide buttons
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    if (actionBtn) {
+        actionBtn.style.display = 'none';
+    }
+
+    // Reset upload area style
+    if (uploadArea) {
+        uploadArea.style.borderColor = '';
+        uploadArea.style.backgroundColor = '';
+    }
+
+    // Re-enable textarea and restore its state
+    if (textarea) {
+        textarea.style.backgroundColor = '';
+        textarea.style.borderColor = '';
+        textarea.style.cursor = '';
+        textarea.style.opacity = '';
+        textarea.placeholder = `Enter standup entries in format:
+Name: yesterday task | today task | blockers
+
+Example:
+Alice: Completed user auth API | Working on dashboard UI | Waiting for design specs
+Bob: Fixed login bug | Code review and testing | None
+Carol: Sprint planning meeting | Starting payment integration | Need API credentials`;
+        // Restore previous value if available
+        if (textarea.dataset.previousValue) {
+            textarea.value = textarea.dataset.previousValue;
+            delete textarea.dataset.previousValue;
+        } else {
+            textarea.value = '';
+        }
+    }
+}
+</script>
+{% endblock %}

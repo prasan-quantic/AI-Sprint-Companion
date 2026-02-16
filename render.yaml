@@ -16,21 +16,16 @@ services:
   # Main Web Service - AI Sprint Companion Backend
   - type: web
     name: ai-sprint-companion
-    runtime: python
+    runtime: docker
     region: oregon  # Free tier available in oregon
     plan: free      # Free tier plan
 
-    # Build configuration
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Docker configuration
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
 
     # Environment variables
     envVars:
-      # Python configuration
-      - key: PYTHON_VERSION
-        value: "3.11.0"
-
       # Application configuration
       - key: AI_PROVIDER
         value: mock  # Use 'openai' or 'azure' for production with real AI
@@ -49,19 +44,8 @@ services:
       - key: AZURE_OPENAI_DEPLOYMENT
         value: gpt-4o-mini
 
-      # Jira Integration (optional, set in dashboard)
-      - key: JIRA_URL
-        sync: false
-      - key: JIRA_EMAIL
-        sync: false
-      - key: JIRA_API_TOKEN
-        sync: false
-      - key: JIRA_PROJECT_KEY
-        sync: false
-
-    # Health check endpoint
+    # Health check configuration
     healthCheckPath: /health
 
     # Auto-deploy on push to main branch
     autoDeploy: true
-
